@@ -125,3 +125,4 @@ if not os.path.exists(config.logdir):
         os.mkdir(config.logdir)
     else:
         raise ValueError(config.logdir + " doesnt exist!")
+config.dataset_path = config.dataset_path.replace("train",config.split)

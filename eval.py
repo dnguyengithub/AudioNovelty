@@ -20,8 +20,11 @@ from grunt.models import srnn
 from grunt.models import vrnn
 
 from grunt.flags_config import config
-config.mode = "eval"
-#config.model = "vrnn"
+#config.mode = "eval"
+#config.model = "srnn"
+#config.latent_size=100
+
+
 # LOG DIR
 config.log_filename = config.bound+"-"\
                       +config.model+"-"\
@@ -30,7 +33,7 @@ config.log_filename = config.bound+"-"\
 config.logdir = os.path.join(config.log_dir,config.log_filename)
 #config.logdir = config.logdir.replace("test_","train_")
 
-config.dataset_path = config.dataset_path.replace("train_",config.split+"_")
+config.dataset_path = config.dataset_path.replace("train",config.split)
 
 
 
@@ -82,8 +85,12 @@ if True:
         total_ll_np.append(ll_np)
     
     Result = dict()
-    Result["data"] = np.hstack(total_tar_np)
-    Result["ll"] = np.hstack(total_ll_np)
+    # m_data: [samples, mel_t, mel_f]
+    # v_ll: [samples]
+    m_data = np.swapaxes(np.hstack(total_tar_np),0,1) 
+    v_ll = np.hstack(total_ll_np)
+    Result["data"] = m_data
+    Result["ll"] = v_ll
     savefile_dir = "./results/"+config.logdir.split("/")[-1]
     if not os.path.exists(savefile_dir):
         os.mkdir(savefile_dir)
@@ -91,24 +98,67 @@ if True:
     with open(savefilename,"wb") as f:
         pickle.dump(Result,f)
     
-    
-    
-### Visualisation
-###############################################################################
-if False:
-    d_N = tar_np.shape[1]
-    plt.figure()
-    for d_i in range(d_N):
-        plt.subplot(d_N,1,d_i+1)
-        tar = tar_np[:,d_i,:]+0
-        plt.plot(tar.reshape(-1))
-        plt.title(str(ll_np[d_i]))
-        plt.axis("off")
-    plt.show()
+d_mean = np.mean(Result["ll"])
+d_std = np.std(Result["ll"])
+print(config.dataset_path)
+print("Mean: ",d_mean)
+print("Std: ",d_std)
 
-tmp = Result["data"][:,:10,:]+0
-tmp = np.swapaxes(tmp,0,1)
-plt.plot(tmp.reshape(-1)[2*3000:2*7000])
+
+
+## LL scatter plot
+FIG_DPI = 150
+plt.figure(figsize=(1920*2/FIG_DPI, 640*2/FIG_DPI), dpi=FIG_DPI) 
+plt.plot(Result["ll"],'o')
+plt.title(config.dataset_path+", mean = "+str(d_mean)+", std = "+str(d_std))
+figname = savefilename.replace(".pkl",".png")
+plt.savefig(figname,dpi=FIG_DPI)
 plt.show()
+
+## Mel Spectrogram and ll plot
+###############################################################################
+d_N = 6
+bad = []
+ll_bad = []
+good = []
+ll_good = []
+for d_i in range(d_N):
+    try:
+        bad.append(m_data[v_ll<(d_mean-1*d_std)][d_i]+0)
+        ll_bad.append(v_ll[v_ll<(d_mean-1*d_std)][d_i]+0)
+    except:
+        continue
+    try:
+        good.append(m_data[v_ll>(d_mean+0.5*d_std)][d_i]+0)
+        ll_good.append(v_ll[v_ll>(d_mean+0.5*d_std)][d_i]+0)
+    except:
+        continue
+FIG_DPI = 150
+plt.figure(figsize=(1920*2/FIG_DPI, 640*2/FIG_DPI), dpi=FIG_DPI) 
+plt.title("YYYYYYY")
+for d_i in range(d_N):
+    try:
+        plt.subplot(2,d_N,d_i+1)
+        plt.imshow(np.swapaxes(good[d_i],0,1))
+        plt.title("Good, "+str(int(ll_good[d_i])))
+        plt.axis("off")
+        plt.colorbar()
+    except:
+        continue
+    try:
+        plt.subplot(2,d_N,d_i+1+d_N)
+        plt.imshow(np.swapaxes(bad[d_i],0,1))
+        plt.title("Bad, "+str(int(ll_bad[d_i])))
+        plt.axis("off")
+        plt.colorbar()
+    except:
+        continue
+figname = savefilename.replace(".pkl","_examples.png")
+plt.savefig(figname,dpi=FIG_DPI)
+plt.show()
+
+
+
+
     
 
