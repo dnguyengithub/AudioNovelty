@@ -31,14 +31,14 @@ tf.app.flags.DEFINE_enum("mode", "train",
 tf.app.flags.DEFINE_enum("model", "vrnn",
                          ["vrnn", "ghmm", "srnn"],
                          "Model choice.")
-tf.app.flags.DEFINE_integer("latent_size", 256,
+tf.app.flags.DEFINE_integer("latent_size", 200,
                             "The size of the latent state of the model.")
 tf.app.flags.DEFINE_enum("dataset_type", "speech",
                          ["pianoroll", "speech", "pose"],
                          "The type of dataset.")
-tf.app.flags.DEFINE_string("dataset_path", "./datasets/train.tfrecord",
+tf.app.flags.DEFINE_string("dataset_path", "./datasets/train_3_160.tfrecord",
                            "Path to load the dataset from.")
-tf.app.flags.DEFINE_integer("data_dimension", 200,
+tf.app.flags.DEFINE_integer("data_dimension", 160,
                             "The dimension of each vector in the data sequence. "
                             "Defaults to 88 for pianoroll datasets and 200 for speech "
                             "datasets. Should not need to be changed except for "
@@ -120,6 +120,10 @@ config.log_filename = config.bound+"-"\
                       +os.path.basename(config.dataset_path)
 config.logdir = os.path.join(config.log_dir,config.log_filename)
 config.logdir.replace("test_","train_")
+
+if config.proposal_type != "filtering":
+    config.logdir += "-" + config.proposal_type
+
 if not os.path.exists(config.logdir):
     if config.mode == "train":
         os.mkdir(config.logdir)

@@ -9,20 +9,26 @@ import matplotlib.pyplot as plt
 import logging
 import os
 import pickle
+import librosa
+from tqdm import tqdm
 
-from grunt import runners
-from grunt import bounds
-from grunt import smc
+from audioNovelty import runners
+from audioNovelty import bounds
+from audioNovelty import smc
 
-from grunt.data import datasets
-from grunt.models import base
-from grunt.models import srnn
-from grunt.models import vrnn
+from audioNovelty.data import datasets
+from audioNovelty.models import base
+from audioNovelty.models import srnn
+from audioNovelty.models import vrnn
 
-from grunt.flags_config import config
-#config.mode = "eval"
-#config.model = "srnn"
-#config.latent_size=100
+from audioNovelty.flags_config import config
+config.num_samples = 1
+
+config.split="test"
+config.model = "vrnn"
+config.latent_size=100
+
+SAMPLING_RATE = 16000
 
 
 # LOG DIR
@@ -34,9 +40,9 @@ config.logdir = os.path.join(config.log_dir,config.log_filename)
 #config.logdir = config.logdir.replace("test_","train_")
 
 config.dataset_path = config.dataset_path.replace("train",config.split)
+config.dataset_path = "./datasets/test30.tfrecord"
 
-
-
+duration = int(filter(str.isdigit,config.dataset_path))
 
 ### Creates the evaluation graph
 ###############################################################################
@@ -47,7 +53,9 @@ if True:
                                                                           shuffle=False, 
                                                                           repeat=False)
     # Compute lower bounds on the log likelihood.
-    ll_per_seq, _, _ = bounds.iwae(model, 
+    # log_weights: A Tensor of shape [max_seq_len, batch_size, num_samples]
+    #  containing the log weights at each timestep
+    ll_per_seq, log_weights, _ = bounds.iwae(model, 
                                         (inputs, targets),
                                         lengths, 
                                         num_samples=1,
@@ -69,96 +77,75 @@ if True:
     sess = tf.train.SingularMonitoredSession()
     runners.wait_for_checkpoint(saver, sess, config.logdir)
 
-    total_tar_np = []
-    total_ll_np = []
+    l_Results = []
+    d_key = 0
     
     while True:
-        try:
-            tar_np, ll_np =\
-                             sess.run([targets, ll_per_t])
-        except tf.errors.OutOfRangeError:
-            break
-        # tar_np.shape = (40, 8, 50) (seq_len, batch_size, data_size)
+        print(d_key)
+        d_key+=1
+        # tar_np.shape = (40, 8, 50) [seq_len, batch_size, data_size]
         # ll_np.shape = (), scalar, mean of the ll_per_t of all sequences in the batch 
-        # batch_size_np = (), scalar = config.batch_size
-        total_tar_np.append(tar_np)
-        total_ll_np.append(ll_np)
-    
-    Result = dict()
-    # m_data: [samples, mel_t, mel_f]
-    # v_ll: [samples]
-    m_data = np.swapaxes(np.hstack(total_tar_np),0,1) 
-    v_ll = np.hstack(total_ll_np)
-    Result["data"] = m_data
-    Result["ll"] = v_ll
+        # log_weights: A Tensor of shape [max_seq_len, batch_size, num_samples]
+        try:
+            tar_np, ll_np, log_weights_np =\
+                             sess.run([targets, ll_per_t, log_weights])
+        except:
+            break
+        log_weights_np = np.squeeze(log_weights_np) #[seq_len, data_size], batch_size=1
+        log_alphas_np = log_weights_np+0 # copy
+        log_alphas_np[1:] = log_weights_np[1:]-log_weights_np[:-1] # decumulate
+        for inbatch_idx in range(config.batch_size):
+            Tmp = dict()
+            Tmp["data"] = tar_np[:,inbatch_idx,:]
+            Tmp["ll"] = ll_np[inbatch_idx]
+            Tmp["log_alphas"] = log_alphas_np[:,inbatch_idx] 
+            l_Results.append(Tmp)
+            
+    ## DUMP
     savefile_dir = "./results/"+config.logdir.split("/")[-1]
     if not os.path.exists(savefile_dir):
         os.mkdir(savefile_dir)
-    savefilename = os.path.join(savefile_dir,config.dataset_path.split("/")[-1]+".pkl")
+    savefilename = os.path.join(savefile_dir,config.dataset_path.split("/")[-1]+"_result.pkl")
     with open(savefilename,"wb") as f:
-        pickle.dump(Result,f)
+        pickle.dump(l_Results,f)
+
+
+
+
+if False:
+    v_time = np.arange(0,duration,1/80)
+    FIG_DPI = 150
+    for d_idx in tqdm(range(len(l_Results))):
+        Tmp = l_Results[d_idx]
+        data = Tmp["data"]+0
+        log_alphas = Tmp["log_alphas"]+0
+        
+        plt.figure(figsize=(1920*2/FIG_DPI, 640*2/FIG_DPI), dpi=FIG_DPI) 
+        plt.subplot(2,1,1)
+        plt.plot(v_time,data)
+        plt.xlim([0,duration])
+    #    plt.yscale("log")
+        plt.title("Waveform")
+        plt.subplot(2,1,2)
+        plt.plot(v_time,log_alphas)
+        plt.plot(v_time,np.zeros_like(log_alphas)-500,'r')
+        plt.xlim([0,duration])
+        plt.ylim([-1500,500])
+        plt.title("Log prob")
+        figname = os.path.join(savefile_dir,config.dataset_path.split("/")[-1]+"_waveform_prob_{0:03d}.png".format(d_idx))
+        plt.savefig(figname,dpi=FIG_DPI)
+        plt.close()
     
-d_mean = np.mean(Result["ll"])
-d_std = np.std(Result["ll"])
-print(config.dataset_path)
-print("Mean: ",d_mean)
-print("Std: ",d_std)
-
-
-
-## LL scatter plot
-FIG_DPI = 150
-plt.figure(figsize=(1920*2/FIG_DPI, 640*2/FIG_DPI), dpi=FIG_DPI) 
-plt.plot(Result["ll"],'o')
-plt.title(config.dataset_path+", mean = "+str(d_mean)+", std = "+str(d_std))
-figname = savefilename.replace(".pkl",".png")
-plt.savefig(figname,dpi=FIG_DPI)
-plt.show()
-
-## Mel Spectrogram and ll plot
-###############################################################################
-d_N = 6
-bad = []
-ll_bad = []
-good = []
-ll_good = []
-for d_i in range(d_N):
-    try:
-        bad.append(m_data[v_ll<(d_mean-1*d_std)][d_i]+0)
-        ll_bad.append(v_ll[v_ll<(d_mean-1*d_std)][d_i]+0)
-    except:
-        continue
-    try:
-        good.append(m_data[v_ll>(d_mean+0.5*d_std)][d_i]+0)
-        ll_good.append(v_ll[v_ll>(d_mean+0.5*d_std)][d_i]+0)
-    except:
-        continue
-FIG_DPI = 150
-plt.figure(figsize=(1920*2/FIG_DPI, 640*2/FIG_DPI), dpi=FIG_DPI) 
-plt.title("YYYYYYY")
-for d_i in range(d_N):
-    try:
-        plt.subplot(2,d_N,d_i+1)
-        plt.imshow(np.swapaxes(good[d_i],0,1))
-        plt.title("Good, "+str(int(ll_good[d_i])))
-        plt.axis("off")
-        plt.colorbar()
-    except:
-        continue
-    try:
-        plt.subplot(2,d_N,d_i+1+d_N)
-        plt.imshow(np.swapaxes(bad[d_i],0,1))
-        plt.title("Bad, "+str(int(ll_bad[d_i])))
-        plt.axis("off")
-        plt.colorbar()
-    except:
-        continue
-figname = savefilename.replace(".pkl","_examples.png")
-plt.savefig(figname,dpi=FIG_DPI)
-plt.show()
-
-
-
-
     
+
+
+#    for turn_idx in range(10):
+#        tar_np, ll_np =  sess.run([targets, ll_per_t])
+#        for inbatch_idx in range(config.batch_size):
+#            data = tar_np[:,inbatch_idx,:]+0
+#            data = data.reshape(-1)
+#        #    plt.plot(data)
+#        #    plt.show()
+#            writefilename = "{0:02d}_{1:04d}_{2:02f}.wav".format(turn_idx,inbatch_idx, ll_np[inbatch_idx])
+#            librosa.output.write_wav(writefilename, data, SAMPLING_RATE)
 

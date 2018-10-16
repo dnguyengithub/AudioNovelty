@@ -43,8 +43,8 @@ FLAGS = tf.app.flags.FLAGS
 config = FLAGS
 
 SAMPLING_RATE = 16000
-SAMPLES_PER_TIMESTEP = 200
-DURATION = 3 # in second
+SAMPLES_PER_TIMESTEP = 160
+DURATION = 30 # in second
 
 
 
@@ -52,6 +52,8 @@ def get_filenames():
     """Get all wav filenames from the TIMIT archive."""
     files_train = sorted(glob.glob(os.path.join(FLAGS.raw_wav_dir,"train", "*.wav")))
     files_test = sorted(glob.glob(os.path.join(FLAGS.raw_wav_dir,"test", "*.wav")))
+    files_train.sort(key=lambda f: int(filter(str.isdigit, f)))
+    files_test.sort(key=lambda f: int(filter(str.isdigit, f)))
     return files_train, files_test
 
 l_filenames_train, l_filenames_test = get_filenames()
@@ -144,11 +146,11 @@ def main(unused_argv):
     # Write the datasets to disk.
     print("Writing to disk...")
     create_tfrecord_from_wavs(processed_wav_train,
-                              os.path.join(FLAGS.out_dir, "train.tfrecord"))
+                              os.path.join(FLAGS.out_dir, "train_{0}_{1}.tfrecord".format(DURATION,SAMPLES_PER_TIMESTEP)))
     create_tfrecord_from_wavs(processed_wav_valid,
-                              os.path.join(FLAGS.out_dir, "valid.tfrecord"))
+                              os.path.join(FLAGS.out_dir, "valid_{0}_{1}.tfrecord".format(DURATION,SAMPLES_PER_TIMESTEP)))
     create_tfrecord_from_wavs(processed_wav_test,
-                              os.path.join(FLAGS.out_dir, "test.tfrecord"))
+                              os.path.join(FLAGS.out_dir, "test_{0}_{1}.tfrecord".format(DURATION,SAMPLES_PER_TIMESTEP)))
 
 
 if __name__ == "__main__":

@@ -373,8 +373,13 @@ class TrainableVRNN(VRNN, base.ELBOTrainableSequenceModel):
 
   def _smoothing_proposal(self, rnn_out, prior, t):
     """Computes the smoothing proposal distribution."""
+    # Original
+#    return self._proposal(rnn_out,
+#                          smoothing_tensors=[self.reverse_rnn_ta.read(t)],
+#                          prior_mu=prior.mean())
+    # Duong did this modification
     return self._proposal(rnn_out,
-                          smoothing_tensors=[self.reverse_rnn_ta.read(t)],
+                          self.reverse_rnn_ta.read(t),
                           prior_mu=prior.mean())
 
   def proposal(self, rnn_out, prior, t):

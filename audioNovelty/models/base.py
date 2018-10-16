@@ -215,7 +215,9 @@ class NormalApproximatePosterior(ConditionalNormalDistribution):
       sigma: The standard deviation of the approximate posterior.
     """
     if self.smoothing:
-      tensor_list.extend(smoothing_tensors)
+#      tensor_list.extend(smoothing_tensors) # Original
+      pass # Duong did this modification
+#    print(len(tensor_list)+1000)
     mu, sigma = super(NormalApproximatePosterior, self).condition(tensor_list)
     return mu + prior_mu, sigma
 
