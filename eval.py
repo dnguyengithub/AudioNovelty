@@ -15,7 +15,7 @@ from tqdm import tqdm
 from audioNovelty import runners
 from audioNovelty import bounds
 from audioNovelty import smc
-from audioNovelty import contrario_utils2 as contrario_utils
+from audioNovelty import contrario_utils
 
 from audioNovelty.data import datasets
 from audioNovelty.models import base
