@@ -105,10 +105,26 @@ tf.app.flags.DEFINE_integer("prefix_length", 25,
 tf.app.flags.DEFINE_string("sample_out_dir", None,
                            "The directory to write the samples to. "
                            "Defaults to logdir.")
+                           
+                           
 
 # Solve tf >=1.8.0 flags bug
 tf.app.flags.DEFINE_string('log_filename', '', 'log filename')
 tf.app.flags.DEFINE_string('logdir', '', 'log directory')
+
+# For Evaluation
+tf.app.flags.DEFINE_boolean("plot", True,
+                            "If true, plot the results ")
+tf.app.flags.DEFINE_boolean("use_contrario", True,
+                            "If true, use contrario ")
+tf.app.flags.DEFINE_integer("eval_threshold", -500,
+                            ".")
+tf.app.flags.DEFINE_integer("max_seq_len", 100,
+                            ".")
+tf.app.flags.DEFINE_float("contrario_eps", 3e-4,
+                          ".")
+                            
+                            
 
 FLAGS = tf.app.flags.FLAGS
 config = FLAGS
