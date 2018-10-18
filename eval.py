@@ -26,8 +26,6 @@ from audioNovelty.flags_config import config
 config.num_samples = 1
 
 
-config.model = "vrnn"
-config.latent_size=80
 config.split="test"
 
 THRESHOLD = config.eval_threshold
