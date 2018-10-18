@@ -66,7 +66,8 @@ savefilename = os.path.join(savefile_dir,config.dataset_path.split("/")[-1]+"_re
 
 ### Load or create
 ###############################################################################
-if os.path.exists(savefilename):
+if False:
+#if os.path.exists(savefilename):
     print("Loading calculated Log probabilities...")
     with open(savefilename,'rb') as f:
         l_Result = pickle.load(f)
