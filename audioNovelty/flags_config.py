@@ -117,6 +117,8 @@ tf.app.flags.DEFINE_boolean("plot", True,
                             "If true, plot the results ")
 tf.app.flags.DEFINE_boolean("rerun_graph", True,
                             "If true, rerun the evaluation graph")
+tf.app.flags.DEFINE_boolean("dump_result", True,
+                            "If true, dump the result")
 tf.app.flags.DEFINE_boolean("use_contrario", True,
                             "If true, use contrario ")
 tf.app.flags.DEFINE_integer("eval_threshold", -500,

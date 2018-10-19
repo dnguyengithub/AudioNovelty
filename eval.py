@@ -122,8 +122,9 @@ else:
             l_Result.append(Tmp)
     
     ## DUMP
-#    with open(savefilename,"wb") as f:
-#        pickle.dump(l_Result,f)
+if config.dump_result:
+    with open(savefilename,"wb") as f:
+        pickle.dump(l_Result,f)
 
 
 
