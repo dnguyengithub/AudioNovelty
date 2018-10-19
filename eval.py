@@ -64,7 +64,7 @@ savefilename = os.path.join(savefile_dir,config.dataset_path.split("/")[-1]+"_re
 
 ### Load or create
 ###############################################################################
-if False:
+if not config.rerun_graph:
 #if os.path.exists(savefilename):
     print("Loading calculated Log probabilities...")
     with open(savefilename,'rb') as f:
