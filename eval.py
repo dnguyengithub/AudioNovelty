@@ -10,7 +10,12 @@ import logging
 import os
 import pickle
 import librosa
+import scipy
+import scipy.signal
+import skimage.morphology
+
 from tqdm import tqdm
+
 
 from audioNovelty import runners
 from audioNovelty import bounds
@@ -29,14 +34,24 @@ config.num_samples = 1
 config.split="test"
 
 THRESHOLD = config.eval_threshold
+PEAK_THRESHOLD = THRESHOLD - config.peak_gap
 USE_CONTRARIO = config.use_contrario
 CONTRARIO_EPS = config.contrario_eps
-CONTRARIO_SIZE = 24
 MAX_SEQUENCE_LEN = config.max_seq_len
+MIN_SEGMENT_LEN = config.min_seg_len
+PERCENTILE = config.percentile
+USE_CORRECTION = config.use_correction
+SUPER_PEAK_THRESHOLD = -950
+SUPER_PEAK_ANOMALY_DURATION = 200 # 2s
 
 SAMPLING_RATE = 16000
-SMOOTH_SIZE = 3
-V_CORRELATION = np.ones(SMOOTH_SIZE)*1/float(SMOOTH_SIZE)
+SMOOTH_SIZE = 21
+PERCENTILE_FILTER_SIZE = config.filter_size
+EROSION_SIZE = PERCENTILE_FILTER_SIZE
+V_CORRELATION = np.ones(EROSION_SIZE)*1/float(EROSION_SIZE)
+
+
+DURATION = 30
 
 # LOG DIR
 config.log_filename = config.bound+"-"\
@@ -47,9 +62,8 @@ config.logdir = os.path.join(config.log_dir,config.log_filename)
 config.logdir = config.logdir.replace("test_","train_")
 
 #config.dataset_path = config.dataset_path.replace("train",config.split)
-config.dataset_path = "./datasets/test_30_160.tfrecord"
+config.dataset_path = "./datasets/test_{0}_160.tfrecord".format(DURATION)
 
-duration = 30
 
 
 
@@ -114,78 +128,142 @@ else:
         log_weights_np = np.squeeze(log_weights_np) #[seq_len, data_size], batch_size=1
         log_alphas_np = log_weights_np+0 # copy
         log_alphas_np[1:] = log_weights_np[1:]-log_weights_np[:-1] # decumulate
-        for inbatch_idx in range(config.batch_size):
-            Tmp = dict()
-            Tmp["data"] = tar_np[:,inbatch_idx,:]
-            Tmp["ll"] = ll_np[inbatch_idx]
-            Tmp["log_alphas"] = log_alphas_np[:,inbatch_idx] 
-            l_Result.append(Tmp)
+        for inbatch_idx in range(tar_np.shape[1]):
+                Tmp = dict()
+                Tmp["data"] = tar_np[:,inbatch_idx,:]
+                Tmp["ll"] = ll_np[inbatch_idx]
+                Tmp["log_alphas"] = log_alphas_np[:,inbatch_idx] 
+                l_Result.append(Tmp)
     
     ## DUMP
-if config.dump_result:
-    with open(savefilename,"wb") as f:
-        pickle.dump(l_Result,f)
+    if config.dump_result:
+        with open(savefilename,"wb") as f:
+            pickle.dump(l_Result,f)
 
 
 
-v_time = np.arange(0,duration,float(config.data_dimension)/SAMPLING_RATE)
+v_time = np.arange(0,DURATION,float(config.data_dimension)/SAMPLING_RATE)
 FIG_DPI = 150
 TP = 0; FP = 0; TN = 0; FN = 0
-d_idx = 0
+d_idx = 20
 for d_idx in tqdm(range(len(l_Result))):
+#if False:
     Tmp = l_Result[d_idx]
     data = Tmp["data"]+0
     log_alphas = Tmp["log_alphas"]+0
-#    v_predict = (log_alphas < -600)[1:-1]
-    v_predict = (log_alphas[1:-1] < THRESHOLD)
+
+    # Smooth
+  
+    max_signal = scipy.ndimage.filters.percentile_filter(log_alphas,
+                                                                1,
+                                                                size=PERCENTILE_FILTER_SIZE)
+
+    percentile_signal = scipy.ndimage.filters.percentile_filter(log_alphas,
+                                                                PERCENTILE,
+                                                                size=PERCENTILE_FILTER_SIZE)
+                                                                
+    median_signal = scipy.signal.medfilt(log_alphas, kernel_size=3)
+    mean_signal = np.correlate(log_alphas,V_CORRELATION,'same')
+
+#    v_predict = (log_alphas[1:-1] < THRESHOLD)
+    v_predict = (max_signal[0:-2] < THRESHOLD)
+    v_peak = (max_signal[0:-2] < PEAK_THRESHOLD)
     v_label = (m_label[d_idx]==1)
     
-#    # A contrario detection
-#    v_A = v_predict
-#    v_anomaly = np.zeros(len(v_A))
-#    
-#    for d_i_4h in range(0,len(v_A)+1-CONTRARIO_SIZE):
-#        v_A_4h = v_A[d_i_4h:d_i_4h+CONTRARIO_SIZE]
-#        v_anomaly_i = contrario_utils.contrario_detection(v_A_4h,CONTRARIO_EPS)
-#        v_anomaly[d_i_4h:d_i_4h+CONTRARIO_SIZE][v_anomalies_i==1] = 1
-       
-    v_anomaly = contrario_utils.contrario_detection(v_predict,epsilon=CONTRARIO_EPS,max_seq_len=MAX_SEQUENCE_LEN)
     
-    v_anomaly = (v_anomaly == 1) 
     if USE_CONTRARIO:
-        TP += np.count_nonzero(v_anomaly[v_label])
-        FP += np.count_nonzero(v_anomaly[~v_label])
-        TN += np.count_nonzero(~v_anomaly[~v_label])
-        FN += np.count_nonzero(~v_anomaly[v_label])
+        v_anomaly = contrario_utils.contrario_detection(v_predict,
+                                                        v_peak = v_peak,
+                                                        epsilon=CONTRARIO_EPS,
+                                                        max_seq_len=MAX_SEQUENCE_LEN,
+                                                        min_seg_len=MIN_SEGMENT_LEN,
+                                                        erosion_size = int(PERCENTILE_FILTER_SIZE/2))
     else:
-        TP += np.count_nonzero(v_predict[v_label])
-        FP += np.count_nonzero(v_predict[~v_label])
-        TN += np.count_nonzero(~v_predict[~v_label])
-        FN += np.count_nonzero(~v_predict[v_label])
+        v_anomaly = (percentile_signal[0:-2] < THRESHOLD)
+        
+    # Erosion
+#    v_anomaly_eroded = skimage.morphology.binary_erosion(v_anomaly)
+#    v_anomaly_eroded = (np.correlate(v_anomaly,V_CORRELATION,'same')==1)
+    v_anomaly_eroded = scipy.ndimage.filters.percentile_filter(v_anomaly,
+                                                        PERCENTILE,
+                                                        size=PERCENTILE_FILTER_SIZE)
+
+    v_anomaly_raw = v_anomaly_eroded+0 #copy
+
+    if USE_CORRECTION:
+        ## SUPER PEAK CORRECTION
+        # Whenever there is a super peak, there is an abnormal sound.
+        v_idx_super_peak = np.where(log_alphas < SUPER_PEAK_THRESHOLD)[0]
+        if (len(v_idx_super_peak) > 0):
+            d_idx_super_peak_anchor = v_idx_super_peak[0]
+            for d_idx_super_peak in v_idx_super_peak:
+                if d_idx_super_peak < d_idx_super_peak_anchor:
+                    continue
+                if (np.count_nonzero(v_anomaly_eroded[d_idx_super_peak:d_idx_super_peak+SUPER_PEAK_ANOMALY_DURATION]) < 85) \
+                    and (np.count_nonzero(v_anomaly_eroded[d_idx_super_peak-SUPER_PEAK_ANOMALY_DURATION:d_idx_super_peak])  < 20) \
+                    and (np.count_nonzero(v_anomaly_eroded[d_idx_super_peak:d_idx_super_peak+SUPER_PEAK_ANOMALY_DURATION]) > 10):
+                    v_anomaly_eroded[d_idx_super_peak:d_idx_super_peak+SUPER_PEAK_ANOMALY_DURATION] = 1
+                    d_idx_super_peak_anchor += SUPER_PEAK_ANOMALY_DURATION
+
+    ## REMOVE SHORT OR ZERO-PEAK ANOMALY 
+    # No anomaly whose duration < 0.6s
+    l_anomaly_segments = contrario_utils.nonzero_segments(v_anomaly_eroded)
+    for l_idx_anomaly_segment in l_anomaly_segments:
+        if len(l_idx_anomaly_segment) < 60:
+            v_anomaly_eroded[l_idx_anomaly_segment] = 0
+        if np.count_nonzero(log_alphas[0:-2][l_idx_anomaly_segment] < PEAK_THRESHOLD) < 1:
+            v_anomaly_eroded[l_idx_anomaly_segment] = 0
+
+    v_anomaly_raw = (v_anomaly_raw == 1) 
+    v_anomaly_eroded = (v_anomaly_eroded == 1)
+    
+    ## UPDATE TP, FP, TN, FN
+    TP += np.count_nonzero(v_anomaly_eroded[v_label])
+    FP += np.count_nonzero(v_anomaly_eroded[~v_label])
+    TN += np.count_nonzero(~v_anomaly_eroded[~v_label])
+    FN += np.count_nonzero(~v_anomaly_eroded[v_label])
+
 
     if config.plot:
         plt.figure(figsize=(1920*2/FIG_DPI, 640*2/FIG_DPI), dpi=FIG_DPI) 
 
         plt.subplot(3,1,1)
-        plt.plot(v_time,data)
-        plt.xlim([0,duration])
+        plt.plot(v_time[::20],data[::20,::5])
+        plt.xlim([0,DURATION])
+        plt.title("Contrario: {0}, Percentile: {1}, Filter size: {2}, Threshould: {3}, Max_seq_len: {4}, Eps: {5}".format(USE_CONTRARIO,
+                                                                                                        PERCENTILE,
+                                                                                                        PERCENTILE_FILTER_SIZE,
+                                                                                                        THRESHOLD,
+                                                                                                        MAX_SEQUENCE_LEN,
+                                                                                                        CONTRARIO_EPS))
         
         plt.subplot(3,1,2)
         plt.plot(v_label,'r' )
-        plt.plot(v_predict,'b:')
-        plt.plot(v_anomaly,'g-.')
-        plt.legend(["label","predict","contrario"])
+#        plt.plot(v_predict,'y:')
+        plt.plot(v_anomaly_raw,'b:')
+        plt.plot(v_anomaly_eroded,'g-.')
+#        plt.legend(["label","predict","anomaly_raw","anomaly"])
+        plt.legend(["label","anomaly_raw","anomaly"])
         plt.xlim([0,len(v_label)])
         
         plt.subplot(3,1,3)
-        plt.plot(v_time,log_alphas)
-        plt.plot(v_time,np.zeros_like(log_alphas)+THRESHOLD,'r')
-        plt.xlim([0,duration])
+        plt.plot(log_alphas)
+        plt.plot(max_signal,'r')
+        plt.plot(percentile_signal,'k')
+        plt.plot(mean_signal,'g')
+        plt.plot(median_signal,'y')
+        plt.legend(["log_prob","max","{0}-percentile".format(PERCENTILE),"mean","median_signal"])
+        plt.plot(np.zeros_like(log_alphas)+THRESHOLD,'r')
+        plt.plot(np.zeros_like(log_alphas)+PEAK_THRESHOLD,'k:')
+        plt.xlim([0,len(log_alphas)])
         plt.ylim([-1500,500])
         
-    #    plt.show()
-    #    
-        figname = os.path.join(savefile_dir,config.dataset_path.split("/")[-1]+"_waveform_prob_{0:03d}.png".format(d_idx))
+#        plt.show()
+
+        figname = os.path.join(savefile_dir,config.dataset_path.split("/")[-1]+"_{0}_{1}_{2}_{3:03d}.png".format(MAX_SEQUENCE_LEN,
+                                                                                                            PERCENTILE,
+                                                                                                            PERCENTILE_FILTER_SIZE,
+                                                                                                            d_idx))
         plt.savefig(figname,dpi=FIG_DPI)
         plt.close()
 
@@ -195,132 +273,25 @@ d_f1 = 2*(d_precision*d_recall)/(d_precision+d_recall)
 print("Precision: {0:02f}, Recall: {1:02f}, F1-score: {2:02f}".format(d_precision,
                                                                       d_recall,
                                                                       d_f1))
+                                                                      
+                                                                      
 logfilename = os.path.join(savefile_dir,config.dataset_path.split("/")[-1]+"_log.txt")
-
-
 import time
 with open(logfilename,"ab+") as f:
     f.write("*************************************************")
     f.write("\n")
     f.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))
     f.write("\n")
-    f.write("THRESHOLD = -400, USE_CONTRARIO = True, CONTRARIO_EPS = 3e-4, MAX_SEQUENCE_LEN = 100")
+    f.write("THRESHOLD = {0}, USE_CONTRARIO = {1}, CONTRARIO_EPS = {2}, MAX_SEQUENCE_LEN = {3}, MIN_SEGMENT_LEN = {4}, FILTER_SIZE = {5}".format(THRESHOLD,
+                                                                                                                              USE_CONTRARIO,
+                                                                                                                              CONTRARIO_EPS,
+                                                                                                                              MAX_SEQUENCE_LEN,
+                                                                                                                              MIN_SEGMENT_LEN,
+                                                                                                                              PERCENTILE_FILTER_SIZE))
     f.write("\n")
     f.write("Precision: {0:02f}, Recall: {1:02f}, F1-score: {2:02f}".format(d_precision,
                                                                       d_recall,
                                                                       d_f1))
     f.write("\n")
 
-    
-
-if False:
-    v_time = np.arange(0,duration,float(config.data_dimension)/SAMPLING_RATE)
-    FIG_DPI = 150
-    for d_idx in tqdm(range(len(l_Result))):
-        Tmp = l_Result[d_idx]
-        data = Tmp["data"]+0
-        log_alphas = Tmp["log_alphas"]+0
-        
-        plt.figure(figsize=(1920*2/FIG_DPI, 640*2/FIG_DPI), dpi=FIG_DPI) 
-        plt.subplot(3,1,1)
-        plt.plot(v_time,data)
-        plt.xlim([0,duration])
-    #    plt.yscale("log")
-        plt.title("Waveform")
-        plt.subplot(3,1,2)
-        plt.plot(v_time,log_alphas)
-        plt.plot(v_time,np.zeros_like(log_alphas)-THRESHOLD,'r')
-        plt.xlim([0,duration])
-        plt.ylim([-1500,500])
-        plt.title("Log prob")
-        
-        plt.subplot(3,1,3)
-        tmp = np.correlate(log_alphas, V_CORRELATION, 'valid')
-        plt.plot(tmp)
-        plt.plot(np.zeros_like(tmp)-THRESHOLD,'r')
-        plt.xlim([0,len(tmp)])
-        plt.ylim([-1500,500])
-        plt.title("Smoothed log prob")
-        
-        figname = os.path.join(savefile_dir,config.dataset_path.split("/")[-1]+"_waveform_prob_{0:03d}.png".format(d_idx))
-        plt.savefig(figname,dpi=FIG_DPI)
-        plt.close()
-    
-
-
-if False:
-    
-    plt.figure()
-    
-    plt.subplot(5,1,1)
-    plt.plot(v_time,data)
-    plt.xlim([0,duration])
-    
-    plt.subplot(5,1,2)
-    plt.plot(v_label)
-    plt.xlim([0,len(v_label)])
-    
-    plt.subplot(5,1,3)
-    plt.plot(v_time,log_alphas)
-    plt.plot(v_time,np.zeros_like(log_alphas)+THRESHOLD,'r')
-    plt.xlim([0,duration])
-    plt.ylim([-1500,500])
-    
-    plt.subplot(5,1,4)
-    plt.plot(v_anomalies)
-    plt.xlim([0,len(v_label)])
-    
-    plt.subplot(5,1,5)
-    plt.plot(v_predict)
-    plt.xlim([0,len(v_label)])
-    plt.show()
-
-"""
-acc = np.count_nonzero(v_predict==v_label)/len(v_label)
-print(acc)
-
-import sklearn.metrics
-from sklearn.metrics import precision_recall_curve
-import matplotlib.pyplot as plt
-from sklearn.utils.fixes import signature
-
-y_test = m_label[d_idx]+0
-y_score = -Tmp["log_alphas"][:-2]
-average_precision = sklearn.metrics.average_precision_score(y_test, y_score)
-
-print('Average precision-recall score: {0:0.2f}'.format(average_precision))
-      
-
-
-
-precision, recall, _ = precision_recall_curve(y_test, y_score)
-
-# In matplotlib < 1.5, plt.fill_between does not have a 'step' argument
-step_kwargs = ({'step': 'post'}
-               if 'step' in signature(plt.fill_between).parameters
-               else {})
-plt.step(recall, precision, color='b', alpha=0.2,
-         where='post')
-plt.fill_between(recall, precision, alpha=0.2, color='b', **step_kwargs)
-
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.ylim([0.0, 1.05])
-plt.xlim([0.0, 1.0])
-plt.title('2-class Precision-Recall curve: AP={0:0.2f}'.format(
-          average_precision))
-plt.show()
-
-"""
-
-
-#    for turn_idx in range(10):
-#        tar_np, ll_np =  sess.run([targets, ll_per_t])
-#        for inbatch_idx in range(config.batch_size):
-#            data = tar_np[:,inbatch_idx,:]+0
-#            data = data.reshape(-1)
-#        #    plt.plot(data)
-#        #    plt.show()
-#            writefilename = "{0:02d}_{1:04d}_{2:02f}.wav".format(turn_idx,inbatch_idx, ll_np[inbatch_idx])
-#            librosa.output.write_wav(writefilename, data, SAMPLING_RATE)
 

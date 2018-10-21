@@ -27,6 +27,10 @@ import os
 from audioNovelty import runners
 
 from audioNovelty.flags_config import config
+#tmp = config.dataset_path + ""
+#config.dataset_path = tmp.replace("train",config.split)
+
+#print(a)
 
 def main(unused_argv):
   fh = logging.FileHandler(os.path.join(config.logdir,config.log_filename+".log"))

@@ -121,9 +121,19 @@ tf.app.flags.DEFINE_boolean("dump_result", True,
                             "If true, dump the result")
 tf.app.flags.DEFINE_boolean("use_contrario", True,
                             "If true, use contrario ")
+tf.app.flags.DEFINE_boolean("use_correction", True,
+                            "If true, use prior knowledge to improve the detection ")
 tf.app.flags.DEFINE_integer("eval_threshold", -500,
                             ".")
+tf.app.flags.DEFINE_integer("percentile", 35,
+                            ".")
+tf.app.flags.DEFINE_integer("peak_gap", 200,
+                            ".")
 tf.app.flags.DEFINE_integer("max_seq_len", 100,
+                            ".")
+tf.app.flags.DEFINE_integer("min_seg_len", 1,
+                            ".")
+tf.app.flags.DEFINE_integer("filter_size", 51,
                             ".")
 tf.app.flags.DEFINE_float("contrario_eps", 3e-4,
                           ".")
@@ -139,7 +149,9 @@ config.log_filename = config.bound+"-"\
                       +"latent_size"+"-"+str(config.latent_size)+"-"\
                       +os.path.basename(config.dataset_path)
 config.logdir = os.path.join(config.log_dir,config.log_filename)
-config.logdir.replace("test_","train_")
+config.logdir = config.logdir.replace("test","train")
+config.logdir = config.logdir.replace("valid","train")
+config.logdir = config.logdir.replace("_30_","_3_")
 
 if config.proposal_type != "filtering":
     config.logdir += "-" + config.proposal_type
