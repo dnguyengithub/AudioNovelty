@@ -33,15 +33,15 @@ config.num_samples = 1
 
 config.split="test"
 
-THRESHOLD = config.eval_threshold
-PEAK_THRESHOLD = THRESHOLD - config.peak_gap
+THRESHOLD = config.anomaly_threshold
+PEAK_THRESHOLD = config.peak_threshold
 USE_CONTRARIO = config.use_contrario
 CONTRARIO_EPS = config.contrario_eps
 MAX_SEQUENCE_LEN = config.max_seq_len
 MIN_SEGMENT_LEN = config.min_seg_len
 PERCENTILE = config.percentile
 USE_CORRECTION = config.use_correction
-SUPER_PEAK_THRESHOLD = -950
+SUPER_PEAK_THRESHOLD = -900
 SUPER_PEAK_ANOMALY_DURATION = 200 # 2s
 
 SAMPLING_RATE = 16000
@@ -148,6 +148,8 @@ TP = 0; FP = 0; TN = 0; FN = 0
 d_idx = 20
 for d_idx in tqdm(range(len(l_Result))):
 #if False:
+#    if d_idx ==35:
+#        continue
     Tmp = l_Result[d_idx]
     data = Tmp["data"]+0
     log_alphas = Tmp["log_alphas"]+0
@@ -190,29 +192,32 @@ for d_idx in tqdm(range(len(l_Result))):
 
     v_anomaly_raw = v_anomaly_eroded+0 #copy
 
-    if USE_CORRECTION:
-        ## SUPER PEAK CORRECTION
-        # Whenever there is a super peak, there is an abnormal sound.
-        v_idx_super_peak = np.where(log_alphas < SUPER_PEAK_THRESHOLD)[0]
-        if (len(v_idx_super_peak) > 0):
-            d_idx_super_peak_anchor = v_idx_super_peak[0]
-            for d_idx_super_peak in v_idx_super_peak:
-                if d_idx_super_peak < d_idx_super_peak_anchor:
-                    continue
-                if (np.count_nonzero(v_anomaly_eroded[d_idx_super_peak:d_idx_super_peak+SUPER_PEAK_ANOMALY_DURATION]) < 85) \
-                    and (np.count_nonzero(v_anomaly_eroded[d_idx_super_peak-SUPER_PEAK_ANOMALY_DURATION:d_idx_super_peak])  < 20) \
-                    and (np.count_nonzero(v_anomaly_eroded[d_idx_super_peak:d_idx_super_peak+SUPER_PEAK_ANOMALY_DURATION]) > 10):
-                    v_anomaly_eroded[d_idx_super_peak:d_idx_super_peak+SUPER_PEAK_ANOMALY_DURATION] = 1
-                    d_idx_super_peak_anchor += SUPER_PEAK_ANOMALY_DURATION
 
     ## REMOVE SHORT OR ZERO-PEAK ANOMALY 
-    # No anomaly whose duration < 0.6s
+    # The beginning of a abnormal sound is always a peak 
+    l_anomaly_segments = contrario_utils.nonzero_segments(v_anomaly_eroded)
+    for l_idx_anomaly_segment in l_anomaly_segments:
+        if np.count_nonzero(log_alphas[0:-2][l_idx_anomaly_segment] < PEAK_THRESHOLD) < 1:
+            v_anomaly_eroded[l_idx_anomaly_segment] = 0
+        else: # There is at least one peak 
+            d_idx_1st_peak = np.where(log_alphas[0:-2][l_idx_anomaly_segment] < PEAK_THRESHOLD)[0][0]
+            v_anomaly_eroded[l_idx_anomaly_segment[0]:l_idx_anomaly_segment[0]+d_idx_1st_peak] = 0
+    # No abnormal sound whose duration 0.6s
     l_anomaly_segments = contrario_utils.nonzero_segments(v_anomaly_eroded)
     for l_idx_anomaly_segment in l_anomaly_segments:
         if len(l_idx_anomaly_segment) < 60:
             v_anomaly_eroded[l_idx_anomaly_segment] = 0
-        if np.count_nonzero(log_alphas[0:-2][l_idx_anomaly_segment] < PEAK_THRESHOLD) < 1:
-            v_anomaly_eroded[l_idx_anomaly_segment] = 0
+
+    if USE_CORRECTION:
+        ## SUPER PEAK CORRECTION
+        # Whenever there is a super peak, there is a long abnormal sound.
+        l_anomaly_segments = contrario_utils.nonzero_segments(v_anomaly_eroded)
+        for l_idx_anomaly_segment in l_anomaly_segments:
+            v_idx_super_peak = np.where(log_alphas[0:-2][l_idx_anomaly_segment] < SUPER_PEAK_THRESHOLD)
+            if (v_idx_super_peak > 0) and (v_idx_super_peak < 4) :
+                d_idx_begin = l_idx_anomaly_segment[0]+v_idx_super_peak[0]
+                v_anomaly_eroded[d_idx_begin:d_idx_begin+SUPER_PEAK_ANOMALY_DURATION] = 1
+            
 
     v_anomaly_raw = (v_anomaly_raw == 1) 
     v_anomaly_eroded = (v_anomaly_eroded == 1)
