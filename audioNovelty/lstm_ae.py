@@ -114,8 +114,8 @@ def run_train(config):
 
         inputs, targets, lengths, model, _ = runners.create_dataset_and_model(config, 
                                                                               split=config.split, 
-                                                                              shuffle=False, 
-                                                                              repeat=False)
+                                                                              shuffle=True, 
+                                                                              repeat=True)
 
         ## tf Graph input
         #X = tf.placeholder("float", [None, timesteps, num_input])

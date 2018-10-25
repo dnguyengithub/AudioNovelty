@@ -38,7 +38,7 @@ tf.app.flags.DEFINE_integer("num_layers", 3,
 tf.app.flags.DEFINE_enum("dataset_type", "speech",
                          ["pianoroll", "speech", "pose"],
                          "The type of dataset.")
-tf.app.flags.DEFINE_string("dataset_path", "./datasets/trainASF_3_54.tfrecord",
+tf.app.flags.DEFINE_string("dataset_path", "./datasets/trainASF_30_54.tfrecord",
                            "Path to load the dataset from.")
 tf.app.flags.DEFINE_integer("data_dimension", 54,
                             "The dimension of each vector in the data sequence. "
@@ -52,7 +52,7 @@ tf.app.flags.DEFINE_integer("batch_size", 16,
 tf.app.flags.DEFINE_integer("num_samples", 1,
                             "The number of samples (or particles) for multisample "
                             "algorithms.")
-tf.app.flags.DEFINE_float("noise_std", 0.25,
+tf.app.flags.DEFINE_float("noise_std", 0.1,
                           "Noise std.")
 tf.app.flags.DEFINE_float("keep_prob", 0.5,
                           "Keep probability.")
