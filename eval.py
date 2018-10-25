@@ -148,8 +148,6 @@ TP = 0; FP = 0; TN = 0; FN = 0
 d_idx = 20
 for d_idx in tqdm(range(len(l_Result))):
 #if False:
-#    if d_idx ==35:
-#        continue
     Tmp = l_Result[d_idx]
     data = Tmp["data"]+0
     log_alphas = Tmp["log_alphas"]+0
