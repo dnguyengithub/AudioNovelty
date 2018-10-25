@@ -111,8 +111,6 @@ config.log_filename = "lstm_dae"+"-"\
                       +os.path.basename(config.dataset_path)
 config.logdir = os.path.join(config.log_dir,config.log_filename)
 config.logdir.replace("test_","train_")
-if config.proposal_type != "filtering":
-    config.logdir += "-" + config.proposal_type
 if not os.path.exists(config.logdir):
     if config.mode == "train":
         os.mkdir(config.logdir)
