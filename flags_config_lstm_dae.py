@@ -99,6 +99,31 @@ tf.app.flags.DEFINE_enum("split", "train",
                          "Split to evaluate the model on.")
 
 
+# For Evaluation
+tf.app.flags.DEFINE_boolean("plot", True,
+                            "If true, plot the results ")
+tf.app.flags.DEFINE_boolean("rerun_graph", True,
+                            "If true, rerun the evaluation graph")
+tf.app.flags.DEFINE_boolean("dump_result", True,
+                            "If true, dump the result")
+tf.app.flags.DEFINE_boolean("use_contrario", True,
+                            "If true, use contrario ")
+tf.app.flags.DEFINE_boolean("use_correction", True,
+                            "If true, use prior knowledge to improve the detection ")
+tf.app.flags.DEFINE_integer("anomaly_threshold", -500,
+                            ".")
+tf.app.flags.DEFINE_integer("peak_threshold", -700,
+                            ".")
+tf.app.flags.DEFINE_integer("percentile", 35,
+                            ".")
+tf.app.flags.DEFINE_integer("max_seq_len", 100,
+                            ".")
+tf.app.flags.DEFINE_integer("min_seg_len", 1,
+                            ".")
+tf.app.flags.DEFINE_integer("filter_size", 51,
+                            ".")
+tf.app.flags.DEFINE_float("contrario_eps", 3e-4,
+                          ".")
 
 
 # Solve tf >=1.8.0 flags bug
@@ -114,7 +139,9 @@ config.log_filename = "lstm_dae"+"-"\
                       +"noise_std" + "-"+str(config.noise_std)+"-"\
                       +os.path.basename(config.dataset_path)
 config.logdir = os.path.join(config.log_dir,config.log_filename)
-config.logdir.replace("test_","train_")
+config.logdir = config.logdir.replace("test","train")
+config.logdir = config.logdir.replace("valid","train")
+
 if not os.path.exists(config.logdir):
     if config.mode == "train":
         os.mkdir(config.logdir)
