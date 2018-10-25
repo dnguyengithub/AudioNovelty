@@ -70,26 +70,14 @@ tf.app.flags.DEFINE_integer("parallel_iterations", 30,
 tf.app.flags.DEFINE_enum("bound", "elbo",
                          ["elbo", "iwae", "fivo", "fivo-aux"],
                          "The bound to optimize.")
-tf.app.flags.DEFINE_boolean("normalize_by_seq_len", True,
-                            "If true, normalize the loss by the number of timesteps "
-                            "per sequence.")
+
 tf.app.flags.DEFINE_float("learning_rate", 0.0025,
                           "The learning rate for ADAM.")
 tf.app.flags.DEFINE_integer("max_steps", int(1e9),
                             "The number of gradient update steps to train for.")
 tf.app.flags.DEFINE_integer("summarize_every", 100,
                             "The number of steps between summaries.")
-tf.app.flags.DEFINE_enum("resampling_type", "multinomial",
-                         ["multinomial", "relaxed"],
-                         "The resampling strategy to use for training.")
-tf.app.flags.DEFINE_float("relaxed_resampling_temperature", 0.5,
-                          "The relaxation temperature for relaxed resampling.")
-tf.app.flags.DEFINE_enum("proposal_type", "filtering",
-                         ["prior", "filtering", "smoothing",
-                          "true-filtering", "true-smoothing"],
-                         "The type of proposal to use. true-filtering and true-smoothing "
-                         "are only available for the GHMM. The specific implementation "
-                         "of each proposal type is left to model-writers.")
+
 
 # Distributed training flags.
 tf.app.flags.DEFINE_string("master", "",
@@ -106,21 +94,7 @@ tf.app.flags.DEFINE_enum("split", "train",
                          ["train", "test", "valid"],
                          "Split to evaluate the model on.")
 
-# Sampling flags.
-tf.app.flags.DEFINE_integer("sample_length", 50,
-                            "The number of timesteps to sample for.")
-tf.app.flags.DEFINE_integer("prefix_length", 25,
-                            "The number of timesteps to condition the model on "
-                            "before sampling.")
-tf.app.flags.DEFINE_string("sample_out_dir", None,
-                           "The directory to write the samples to. "
-                           "Defaults to logdir.")
 
-# Eval flags
-tf.app.flags.DEFINE_integer("upperbound", 50,
-                            "upperbound")
-tf.app.flags.DEFINE_integer("lowerbound", 50,
-                            "upperbound")
 
 
 # Solve tf >=1.8.0 flags bug
@@ -132,8 +106,8 @@ config = FLAGS
 
 # LOG DIR
 config.log_filename = "lstm_dae"+"-"\
-                      +config.model+"-"\
                       +"latent_size"+"-"+str(config.latent_size)+"-"\
+                      +"noise_std" + "-"+str(config.noise_std)+"-"\
                       +os.path.basename(config.dataset_path)
 config.logdir = os.path.join(config.log_dir,config.log_filename)
 config.logdir.replace("test_","train_")
