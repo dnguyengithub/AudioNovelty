@@ -50,7 +50,7 @@ def wait_for_checkpoint(saver, sess, logdir):
 
 def create_logging_hook(step, loss_value):
     """Creates a logging hook that prints the bound value periodically."""
-    loss_label = "loss"
+    loss_label = "total loss"
     def summary_formatter(log_dict):
         return "Step %d, %s: %f" % (log_dict["step"], 
                                 loss_label, 
