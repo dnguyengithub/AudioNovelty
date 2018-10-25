@@ -69,8 +69,8 @@ def create_loss():
 
     inputs, targets, lengths, model, _ = runners.create_dataset_and_model(config, 
                                                                           split=config.split, 
-                                                                          shuffle=False, 
-                                                                          repeat=False)
+                                                                          shuffle=True, 
+                                                                          repeat=True)
 
     data_encoder = snt.nets.MLP(output_sizes=[config.latent_size],
                               initializers=initializers,
