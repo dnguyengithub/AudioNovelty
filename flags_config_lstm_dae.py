@@ -89,6 +89,10 @@ tf.app.flags.DEFINE_integer("ps_tasks", 0,
 tf.app.flags.DEFINE_boolean("stagger_workers", True,
                             "If true, bring one worker online every 1000 steps.")
 
+tf.app.flags.DEFINE_enum("proposal_type", "filtering",
+                         ["prior", "filtering", "smoothing"],
+                         "Unused")
+
 # Evaluation flags.
 tf.app.flags.DEFINE_enum("split", "train",
                          ["train", "test", "valid"],
