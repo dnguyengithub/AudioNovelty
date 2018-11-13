@@ -52,7 +52,7 @@ tf.app.flags.DEFINE_integer("batch_size", 16,
 tf.app.flags.DEFINE_integer("num_samples", 1,
                             "The number of samples (or particles) for multisample "
                             "algorithms.")
-tf.app.flags.DEFINE_float("noise_std", 0.1,
+tf.app.flags.DEFINE_float("noise_std", 0.1  ,
                           "Noise std.")
 tf.app.flags.DEFINE_float("keep_prob", 0.5,
                           "Keep probability.")
@@ -110,11 +110,11 @@ tf.app.flags.DEFINE_boolean("use_contrario", True,
                             "If true, use contrario ")
 tf.app.flags.DEFINE_boolean("use_correction", True,
                             "If true, use prior knowledge to improve the detection ")
-tf.app.flags.DEFINE_integer("anomaly_threshold", -500,
+tf.app.flags.DEFINE_integer("anomaly_threshold", 10,
                             ".")
-tf.app.flags.DEFINE_integer("peak_threshold", -700,
+tf.app.flags.DEFINE_integer("peak_threshold", 50,
                             ".")
-tf.app.flags.DEFINE_integer("percentile", 35,
+tf.app.flags.DEFINE_integer("percentile", 99,
                             ".")
 tf.app.flags.DEFINE_integer("max_seq_len", 100,
                             ".")

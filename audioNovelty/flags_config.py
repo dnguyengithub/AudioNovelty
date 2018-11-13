@@ -127,7 +127,7 @@ tf.app.flags.DEFINE_integer("anomaly_threshold", -500,
                             ".")
 tf.app.flags.DEFINE_integer("peak_threshold", -700,
                             ".")
-tf.app.flags.DEFINE_integer("percentile", 35,
+tf.app.flags.DEFINE_integer("percentile", 1,
                             ".")
 tf.app.flags.DEFINE_integer("max_seq_len", 100,
                             ".")

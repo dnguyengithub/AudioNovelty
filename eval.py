@@ -46,8 +46,8 @@ SUPER_PEAK_ANOMALY_DURATION = 200 # 2s
 
 SAMPLING_RATE = 16000
 SMOOTH_SIZE = 21
-PERCENTILE_FILTER_SIZE = config.filter_size
-EROSION_SIZE = PERCENTILE_FILTER_SIZE
+FILTER_SIZE = config.filter_size
+EROSION_SIZE = FILTER_SIZE
 V_CORRELATION = np.ones(EROSION_SIZE)*1/float(EROSION_SIZE)
 
 
@@ -156,11 +156,11 @@ for d_idx in tqdm(range(len(l_Result))):
   
     max_signal = scipy.ndimage.filters.percentile_filter(log_alphas,
                                                                 1,
-                                                                size=PERCENTILE_FILTER_SIZE)
+                                                                size=FILTER_SIZE)
 
     percentile_signal = scipy.ndimage.filters.percentile_filter(log_alphas,
                                                                 PERCENTILE,
-                                                                size=PERCENTILE_FILTER_SIZE)
+                                                                size=FILTER_SIZE)
                                                                 
     median_signal = scipy.signal.medfilt(log_alphas, kernel_size=3)
     mean_signal = np.correlate(log_alphas,V_CORRELATION,'same')
@@ -177,7 +177,7 @@ for d_idx in tqdm(range(len(l_Result))):
                                                         epsilon=CONTRARIO_EPS,
                                                         max_seq_len=MAX_SEQUENCE_LEN,
                                                         min_seg_len=MIN_SEGMENT_LEN,
-                                                        erosion_size = int(PERCENTILE_FILTER_SIZE/2))
+                                                        erosion_size = int(FILTER_SIZE/2))
     else:
         v_anomaly = (percentile_signal[0:-2] < THRESHOLD)
         
@@ -186,7 +186,7 @@ for d_idx in tqdm(range(len(l_Result))):
 #    v_anomaly_eroded = (np.correlate(v_anomaly,V_CORRELATION,'same')==1)
     v_anomaly_eroded = scipy.ndimage.filters.percentile_filter(v_anomaly,
                                                         PERCENTILE,
-                                                        size=PERCENTILE_FILTER_SIZE)
+                                                        size=FILTER_SIZE)
 
     v_anomaly_raw = v_anomaly_eroded+0 #copy
 
@@ -235,7 +235,7 @@ for d_idx in tqdm(range(len(l_Result))):
         plt.xlim([0,DURATION])
         plt.title("Contrario: {0}, Percentile: {1}, Filter size: {2}, Threshould: {3}, Max_seq_len: {4}, Eps: {5}".format(USE_CONTRARIO,
                                                                                                         PERCENTILE,
-                                                                                                        PERCENTILE_FILTER_SIZE,
+                                                                                                        FILTER_SIZE,
                                                                                                         THRESHOLD,
                                                                                                         MAX_SEQUENCE_LEN,
                                                                                                         CONTRARIO_EPS))
@@ -265,7 +265,7 @@ for d_idx in tqdm(range(len(l_Result))):
 
         figname = os.path.join(savefile_dir,config.dataset_path.split("/")[-1]+"_{0}_{1}_{2}_{3:03d}.png".format(MAX_SEQUENCE_LEN,
                                                                                                             PERCENTILE,
-                                                                                                            PERCENTILE_FILTER_SIZE,
+                                                                                                            FILTER_SIZE,
                                                                                                             d_idx))
         plt.savefig(figname,dpi=FIG_DPI)
         plt.close()
@@ -290,7 +290,7 @@ with open(logfilename,"ab+") as f:
                                                                                                                               CONTRARIO_EPS,
                                                                                                                               MAX_SEQUENCE_LEN,
                                                                                                                               MIN_SEGMENT_LEN,
-                                                                                                                              PERCENTILE_FILTER_SIZE))
+                                                                                                                              FILTER_SIZE))
     f.write("\n")
     f.write("Precision: {0:02f}, Recall: {1:02f}, F1-score: {2:02f}".format(d_precision,
                                                                       d_recall,
