@@ -34,6 +34,9 @@ python run_audidoNovelty.py \
 
 ## Anomaly Detection
 
+## Acknowledgments
+We would like to thank the Tensorflow Research Group for the implementation of VRNN and A3Lab for the Dataset.
+
 ## Contact
 This codebase is maintained by Duong NGUYEN (van.nguyen1@imt-atlantique.fr). For questions and issues please open an issue on the issues tracker.
 
