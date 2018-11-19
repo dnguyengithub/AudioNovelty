@@ -15,7 +15,7 @@ We use the FIVO implementation of the Tensorflow Research Group (https://github.
 - [sonnet](https://github.com/deepmind/sonnet)
 
 ## Datasets
-The dataset is provided by [A3Lab](http://www.a3lab.dii.univpm.it) and is availble at a3lab.dii.univpm.it/webdav/audio/Novelty_Detection_Dataset.tar.gz
+The dataset is provided by [A3Lab](http://www.a3lab.dii.univpm.it) and is availble at http://a3lab.dii.univpm.it/webdav/audio/Novelty_Detection_Dataset.tar.gz.
 
 ## Preprocess the Data
 
