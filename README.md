@@ -11,12 +11,22 @@ We use the FIVO implementation of the Tensorflow Research Group (https://github.
 ## Prerequisites
 - Numpy 1.15.2 (Python 2.7)
 - Tensorflow 1.8.0 
-* [scipy](https://www.scipy.org/)
-* [sonnet](https://github.com/deepmind/sonnet)
+- [scipy](https://www.scipy.org/)
+- [sonnet](https://github.com/deepmind/sonnet)
 
 ## Datasets
-The dataset is provided by A3Lab(http://www.a3lab
-.dii.univpm.it)
+The dataset is provided by [A3Lab](http://www.a3lab.dii.univpm.it) and is availble at a3lab.dii.univpm.it/webdav/audio/Novelty_Detection_Dataset.tar.gz.
+
+## Preprocess the Data
+
+
+## Training
+
+
+## Evaluation
+
+## Contact
+This codebase is maintained by Duong NGUYEN (van.nguyen1@imt-atlantique.fr). For questions and issues please open an issue on the issues tracker.
 
 
 
