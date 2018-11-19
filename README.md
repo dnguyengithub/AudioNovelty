@@ -9,9 +9,14 @@ for Acoustic Novelty Detection", submitted to ICASSP 2019.
 We use the FIVO implementation of the Tensorflow Research Group (https://github.com/tensorflow/models/blob/master/research/fivo) for the VRNN training phase of this code.
 
 ## Prerequisites
-
 - Numpy 1.15.2 (Python 2.7)
 - Tensorflow 1.8.0 
+* [scipy](https://www.scipy.org/)
+* [sonnet](https://github.com/deepmind/sonnet)
+
+## Datasets
+The dataset is provided by A3Lab(http://www.a3lab
+.dii.univpm.it)
 
 
 
