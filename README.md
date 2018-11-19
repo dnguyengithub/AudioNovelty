@@ -18,7 +18,12 @@ We use the FIVO implementation of the Tensorflow Research Group (https://github.
 The dataset is provided by [A3Lab](http://www.a3lab.dii.univpm.it) and is availble at http://a3lab.dii.univpm.it/webdav/audio/Novelty_Detection_Dataset.tar.gz.
 
 ## Preprocess the Data
-
+To preprocess the \*.wav files, run:
+```
+python audioNovelty/data/create_tfrecords.py \
+       --raw_wav_dir="./datasets/" \
+       --out_dir=""./datasets/"
+```
 
 ## Training
 First we need to train the model:
