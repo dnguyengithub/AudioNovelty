@@ -10,7 +10,7 @@ We use the FIVO implementation of the Tensorflow Research Group (https://github.
 
 ## Prerequisites
 - Numpy 1.15.2 (Python 2.7)
-- Tensorflow 1.8.0 
+- [Tensorflow](http://tensorflow.org) 1.8.0 
 - [scipy](https://www.scipy.org/)
 - [sonnet](https://github.com/deepmind/sonnet)
 
@@ -21,6 +21,15 @@ The dataset is provided by [A3Lab](http://www.a3lab.dii.univpm.it) and is availb
 
 
 ## Training
+First we need to train the model:
+```
+python run_audidoNovelty.py \
+       --mode=train \
+       --model=vrnn \
+       --data_dimension=160 \
+       --latent_size=160 \
+       --batch_size=4
+```
 
 
 ## Anomaly Detection
