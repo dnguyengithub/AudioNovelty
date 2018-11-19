@@ -23,7 +23,7 @@ The dataset is provided by [A3Lab](http://www.a3lab.dii.univpm.it) and is availb
 ## Training
 
 
-## Evaluation
+## Anomaly Detection
 
 ## Contact
 This codebase is maintained by Duong NGUYEN (van.nguyen1@imt-atlantique.fr). For questions and issues please open an issue on the issues tracker.
