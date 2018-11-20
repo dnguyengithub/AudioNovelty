@@ -62,7 +62,10 @@ We will get:
 Dataset: valid_30_160.tfrecord
 Log probability: mean=67.93385, std=129.93369
 ```
-We will set the threshold as $\theta = m_{valid}-3\sigma_{valid}$
+
+We will set the threshold as:
+<img src="https://latex.codecogs.com/gif.latex?\theta = m_{valid}-3\sigma_{valid}" /> 
+
 Now run the detection:
 ```
 python eval.py \
@@ -74,7 +77,9 @@ python eval.py \
        --batch_size=4 \
        --rerun_graph=True \
        --plot=True \
-       --use_contrario=False 
+       --use_contrario=False \
+       --anomaly_threshold=-322 \
+       --peak_threshold=-582
 ```
 
 ## Acknowledgments
