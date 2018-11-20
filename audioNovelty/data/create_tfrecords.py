@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Preprocesses TIMIT from raw wavfiles to create a set of TFRecords.
+
+"""
+Creates a set of TFRecords from raw *.wav files.
 """
 
 from __future__ import absolute_import
@@ -22,10 +24,8 @@ from __future__ import print_function
 import glob
 import os
 import random
-import re
 
 import numpy as np
-import scipy.io.wavfile as scipywavefile
 import librosa
 import tensorflow as tf
 from tqdm import tqdm
@@ -34,19 +34,18 @@ tf.app.flags.DEFINE_string("raw_wav_dir", "./datasets/",
                           "Directory containing TIMIT files.")
 tf.app.flags.DEFINE_string("out_dir", "./datasets/",
                           "Output directory for TFRecord files.")
+tf.app.flags.DEFINE_integer("duration", 3,
+                            "Duration of the series (in second).")
 tf.app.flags.DEFINE_float("valid_frac", 0.1,
                           "Fraction of train set to use as valid set. "
                           "Must be between 0.0 and 1.0.")
-
 
 FLAGS = tf.app.flags.FLAGS
 config = FLAGS
 
 SAMPLING_RATE = 16000
 SAMPLES_PER_TIMESTEP = 160
-DURATION = 30 # in second
-
-
+DURATION = FLAGS.duration
 
 def get_filenames():
     """Get all wav filenames from the TIMIT archive."""
@@ -55,12 +54,6 @@ def get_filenames():
     files_train.sort(key=lambda f: int(filter(str.isdigit, f)))
     files_test.sort(key=lambda f: int(filter(str.isdigit, f)))
     return files_train, files_test
-
-l_filenames_train, l_filenames_test = get_filenames()
-filename = l_filenames_train[0]; mono = False
-filename2 = l_filenames_test[0]; mono = True
-
-
 
 def load_wav(filename,mono):
     data, wav_rate = librosa.load(filename,
@@ -100,19 +93,18 @@ def create_tfrecord_from_wavs(wavs, output_file):
     for wav in wavs:
       builder.write(wav.astype(np.float32).tobytes())
 
-
 def main(unused_argv):
-    l_filenames_train, l_filenames_test = get_filenames()
+    l_filename_train, l_filename_test = get_filenames()
 
     print("Loading training *.wav files...")
     l_wav_train = []
     l_wav_test = []
-    for f in tqdm(l_filenames_train):
+    for f in tqdm(l_filename_train):
         l_wav_train_tmp, wav_rate = load_wav(f, mono=False)
         l_wav_train += l_wav_train_tmp
         
     print("Loading test *.wav files...")
-    for f in tqdm(l_filenames_test):
+    for f in tqdm(l_filename_test):
         l_wav_test_tmp, wav_rate = load_wav(f, mono=True)
         l_wav_test += l_wav_test_tmp
         
@@ -127,9 +119,6 @@ def main(unused_argv):
     train_stacked = np.hstack(l_wav_train)
     train_mean = np.mean(train_stacked)
     train_std = np.std(train_stacked)
-    test_stacked = np.hstack(l_wav_test)
-    test_mean = np.mean(test_stacked)
-    test_std = np.std(test_stacked)
     print("train mean: %f  train std: %f" % (train_mean, train_std))
 
     # Process all data, normalizing with the train set statistics.

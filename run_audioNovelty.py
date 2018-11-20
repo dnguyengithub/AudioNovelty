@@ -27,10 +27,6 @@ import os
 from audioNovelty import runners
 
 from audioNovelty.flags_config import config
-#tmp = config.dataset_path + ""
-#config.dataset_path = tmp.replace("train",config.split)
-
-#print(a)
 
 def main(unused_argv):
   fh = logging.FileHandler(os.path.join(config.logdir,config.log_filename+".log"))
@@ -39,17 +35,10 @@ def main(unused_argv):
   logger = logging.getLogger('tensorflow')
   logger.addHandler(fh)
   if config.model in ["vrnn", "srnn"]:
-    if config.data_dimension is None:
-      if config.dataset_type == "pianoroll":
-        config.data_dimension = PIANOROLL_DEFAULT_DATA_DIMENSION
-      elif config.dataset_type == "speech":
-        config.data_dimension = SPEECH_DEFAULT_DATA_DIMENSION
     if config.mode == "train":
       runners.run_train(config)
     elif config.mode == "eval":
       runners.run_eval(config)
-    elif FLAGS.mode == "sample":
-      runners.run_sample(config)
 
 if __name__ == "__main__":
   tf.app.run(main)

@@ -26,12 +26,12 @@ import os
 
 # Shared flags.
 tf.app.flags.DEFINE_enum("mode", "train",
-                         ["train", "eval", "sample"],
+                         ["train", "eval"],
                          "The mode of the binary.")
 tf.app.flags.DEFINE_enum("model", "vrnn",
                          ["vrnn", "ghmm", "srnn"],
                          "Model choice.")
-tf.app.flags.DEFINE_integer("latent_size", 200,
+tf.app.flags.DEFINE_integer("latent_size", 160,
                             "The size of the latent state of the model.")
 tf.app.flags.DEFINE_enum("dataset_type", "speech",
                          ["pianoroll", "speech", "pose"],
@@ -63,7 +63,7 @@ tf.app.flags.DEFINE_enum("bound", "elbo",
 tf.app.flags.DEFINE_boolean("normalize_by_seq_len", True,
                             "If true, normalize the loss by the number of timesteps "
                             "per sequence.")
-tf.app.flags.DEFINE_float("learning_rate", 0.0001,
+tf.app.flags.DEFINE_float("learning_rate", 3e-5,
                           "The learning rate for ADAM.")
 tf.app.flags.DEFINE_integer("max_steps", int(1e9),
                             "The number of gradient update steps to train for.")
@@ -112,20 +112,18 @@ tf.app.flags.DEFINE_string("sample_out_dir", None,
 tf.app.flags.DEFINE_string('log_filename', '', 'log filename')
 tf.app.flags.DEFINE_string('logdir', '', 'log directory')
 
-# For Evaluation
-tf.app.flags.DEFINE_boolean("plot", True,
+# Evaluation flags
+tf.app.flags.DEFINE_boolean("plot", False,
                             "If true, plot the results ")
-tf.app.flags.DEFINE_boolean("rerun_graph", True,
+tf.app.flags.DEFINE_boolean("rerun_graph", False,
                             "If true, rerun the evaluation graph")
-tf.app.flags.DEFINE_boolean("dump_result", True,
+tf.app.flags.DEFINE_boolean("dump_result", False,
                             "If true, dump the result")
-tf.app.flags.DEFINE_boolean("use_contrario", True,
+tf.app.flags.DEFINE_boolean("use_contrario", False,
                             "If true, use contrario ")
-tf.app.flags.DEFINE_boolean("use_correction", True,
-                            "If true, use prior knowledge to improve the detection ")
-tf.app.flags.DEFINE_integer("anomaly_threshold", -500,
+tf.app.flags.DEFINE_integer("anomaly_threshold", -330,
                             ".")
-tf.app.flags.DEFINE_integer("peak_threshold", -700,
+tf.app.flags.DEFINE_integer("peak_threshold", -550,
                             ".")
 tf.app.flags.DEFINE_integer("percentile", 1,
                             ".")
@@ -133,7 +131,7 @@ tf.app.flags.DEFINE_integer("max_seq_len", 100,
                             ".")
 tf.app.flags.DEFINE_integer("min_seg_len", 1,
                             ".")
-tf.app.flags.DEFINE_integer("filter_size", 51,
+tf.app.flags.DEFINE_integer("filter_size", 41,
                             ".")
 tf.app.flags.DEFINE_float("contrario_eps", 3e-4,
                           ".")
