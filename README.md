@@ -64,7 +64,7 @@ Log probability: mean=67.93385, std=129.93369
 ```
 
 We will set the threshold as:
-<img src="https://latex.codecogs.com/gif.latex?\theta = m_{valid}-3\sigma_{valid}" /> 
+<img src="/tex/b4be166e241537544877760716059bd8.svg?invert_in_darkmode&sanitize=true" align=middle width=142.72244744999998pt height=22.831056599999986pt/>
 
 Now run the detection:
 ```
