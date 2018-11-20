@@ -62,6 +62,7 @@ Dataset: valid_30_160.tfrecord
 Log probability: mean=67.93385, std=129.93369
 ```
 
+
 The threshold is then set as: <img src="/tex/dfa1ab00644e8534aa2cf59db309f2b7.svg?invert_in_darkmode&sanitize=true" align=middle width=142.72244744999998pt height=22.831056599999986pt/>
 We also set another threshold: **peak_threshold**, which marks the starting point of the abnormal events. Note that we evaluate <img src="/tex/d4fefbe81767f409ae251e6ebd5dd6a2.svg?invert_in_darkmode&sanitize=true" align=middle width=86.83217565pt height=24.65753399999998pt/>, at the beginning of the abnormal event, the historical information <img src="/tex/086b87ee3074c824ea6407cb948a7e44.svg?invert_in_darkmode&sanitize=true" align=middle width=25.216930199999993pt height=14.611878600000017pt/> encoded in the hidden states of the RNN and the latent variable is well known by the model, so <img src="/tex/d4fefbe81767f409ae251e6ebd5dd6a2.svg?invert_in_darkmode&sanitize=true" align=middle width=86.83217565pt height=24.65753399999998pt/> will be very low. After that, the model updates its hidden states, however, these hidden states are "unstable" (because it starts to take in account the unknown abnormal event), <img src="/tex/d4fefbe81767f409ae251e6ebd5dd6a2.svg?invert_in_darkmode&sanitize=true" align=middle width=86.83217565pt height=24.65753399999998pt/> will not be as low as the one at the starting point. The threshold is then set as: <img src="/tex/d2edac15684d92a890330e902be42a7a.svg?invert_in_darkmode&sanitize=true" align=middle width=149.86418865pt height=22.831056599999986pt/>
 
