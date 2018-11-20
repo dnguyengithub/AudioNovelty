@@ -63,6 +63,12 @@ Log probability: mean=67.93385, std=129.93369
 ```
 
 The threshold is then set as: $\theta = m_{valid} - 3\sigma_{valid}$
+We also set another threshold: **peak_threshold**, which marks the starting point of the abnormal events. Note that we evaluate $\log p(\boldsymbol{\mathrm{x}}_t\boldsymbol{\mathrm{x}}_{<t})$, at the beginning of the abnormal event, the historical information $\boldsymbol{\mathrm{x}}_{<t}$ encoded in the hidden states of the RNN and the latent variable is well known by the model, so $\log p(\boldsymbol{\mathrm{x}}_t\boldsymbol{\mathrm{x}}_{<t})$ will be very low. After that, the model updates its hidden states, however, these hidden states are "unstable" (because it starts to take in account the unknown abnormal event), $\log p(\boldsymbol{\mathrm{x}}_t\boldsymbol{\mathrm{x}}_{<t})$ will not be as low as the one at the starting point. The threshold is then set as: $\theta_p = m_{valid} - 5\sigma_{valid}$
+
+
+For the posprocessing step, we simply applied an minimum filter to the log probability sequence. We also implemented an **A contrario detection** (see https://hal-imt-atlantique.archives-ouvertes.fr/hal-01808176v4/document), however the minimum filter is already sufficient to give a good result.
+
+Due to the page limit, we did not mention the peak_threshold and the minimum filter in the paper. 
 
 - Now run the detection:
 ```
@@ -85,9 +91,3 @@ We would like to thank the Tensorflow Research Group for the implementation of V
 
 ## Contact
 This codebase is maintained by Duong NGUYEN (van.nguyen1@imt-atlantique.fr). For questions and issues please open an issue on the issues tracker.
-
-
-
-
-
-
