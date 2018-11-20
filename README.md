@@ -62,7 +62,7 @@ We will get:
 Dataset: valid_30_160.tfrecord
 Log probability: mean=67.93385, std=129.93369
 ```
-We will set the threshold as 
+We will set the threshold as $\theta = m_{valid}-3\sigma_{valid}$
 Now run the detection:
 ```
 python eval.py \
