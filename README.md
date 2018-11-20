@@ -63,7 +63,7 @@ Dataset: valid_30_160.tfrecord
 Log probability: mean=67.93385, std=129.93369
 ```
 
-We will set the threshold as:
+The threshold is then set as:
 <img src="/tex/b4be166e241537544877760716059bd8.svg?invert_in_darkmode&sanitize=true" align=middle width=142.72244744999998pt height=22.831056599999986pt/>
 
 Now run the detection:
