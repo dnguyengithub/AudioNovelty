@@ -57,13 +57,16 @@ python eval.py \
 ```
 
 We will get:
+
 ```
 Dataset: valid_30_160.tfrecord
 Log probability: mean=67.93385, std=129.93369
-```.
+```
 
 
-The threshold is then set as: $\theta = m_{valid} - 3\sigma_{valid}$
+The threshold is then set as: $\theta = m_{valid} - 3\sigma_{valid}$. 
+
+
 We also set another threshold: *peak_threshold*, which marks the starting point of the abnormal events. Note that we evaluate $\log p(\boldsymbol{\mathrm{x}}_t \| \boldsymbol{\mathrm{x}}_{<t})$, at the beginning of the abnormal event, the historical information $\boldsymbol{\mathrm{x}}_{<t}$ encoded in the hidden states of the RNN and the latent variable is well known by the model, so $\log p(\boldsymbol{\mathrm{x}}_t \| \boldsymbol{\mathrm{x}}_{<t})$ will be very low. After that, the model updates its hidden states, however, these hidden states are "unstable" (because it starts to take in account the unknown abnormal event), $\log p(\boldsymbol{\mathrm{x}}_t\boldsymbol{\mathrm{x}}_{<t})$ will not be as low as the one at the starting point. This peak threshold is then set as: $\theta_p = m_{valid} - 5\sigma_{valid}$.
 
 
