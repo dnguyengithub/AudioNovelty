@@ -62,8 +62,7 @@ Dataset: valid_30_160.tfrecord
 Log probability: mean=67.93385, std=129.93369
 ```
 
-The threshold is then set as:
-<img src="/tex/b4be166e241537544877760716059bd8.svg?invert_in_darkmode&sanitize=true" align=middle width=142.72244744999998pt height=22.831056599999986pt/>
+The threshold is then set as: <img src="/tex/dfa1ab00644e8534aa2cf59db309f2b7.svg?invert_in_darkmode&sanitize=true" align=middle width=142.72244744999998pt height=22.831056599999986pt/>
 
 - Now run the detection:
 ```
@@ -86,6 +85,7 @@ We would like to thank the Tensorflow Research Group for the implementation of V
 
 ## Contact
 This codebase is maintained by Duong NGUYEN (van.nguyen1@imt-atlantique.fr). For questions and issues please open an issue on the issues tracker.
+
 
 
 
