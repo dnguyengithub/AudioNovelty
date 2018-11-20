@@ -1,9 +1,8 @@
 # Acoustic Novelty Detection
 
-Tenforflow implementation of the Acoustic Novelty Detection using Recurent Neural Networks with Stochastic Layers (RNNSLs).
+Tenforflow implementation of the **Acoustic Novelty Detection using Recurent Neural Networks with Stochastic Layers** (RNNSLs).
 
-Duong Nguyen, Oliver S. Kirsebom, Fábio Frazão, Ronan Fablet and Stan Matwin; "Recurrent Neural Networks with Stochastic Layers
-for Acoustic Novelty Detection", submitted to ICASSP 2019.
+*Duong Nguyen, Oliver S. Kirsebom, Fábio Frazão, Ronan Fablet and Stan Matwin; "Recurrent Neural Networks with Stochastic Layers for Acoustic Novelty Detection", submitted to ICASSP 2019.*
 
 ## Credits
 We use the FIVO implementation of the Tensorflow Research Group (https://github.com/tensorflow/models/blob/master/research/fivo) for the VRNN training phase of this code.
@@ -27,7 +26,7 @@ python audioNovelty/data/create_tfrecords.py \
 ```
 
 For the training phase, the duration of the series should be small (3, 5 or 10s). For the test phase, the duration of the series should be long to reduce the effect of the "warming up phase" of VRNN (the initiation of the hidden states).
-In the paper, we created a set of 3s-long series for the training set and a set of 30s-long series for the test set.
+In the paper, we created a set of 3s-long series for the training set and a set of 30s-long series for the test/validation set.
 
 ## Training
 First we need to train the model:
@@ -44,7 +43,7 @@ python run_audidoNovelty.py \
 ## Anomaly Detection
 After learning the distribution over the series in the training set, we calculate the log probability of each series in the test set to state the detection.
 
-Calculate the log probabilities in the validation set to choose the threshold:
+- Calculate the log probabilities in the validation set to choose the threshold:
 ```
 python eval.py \
        --mode=test \
@@ -66,7 +65,7 @@ Log probability: mean=67.93385, std=129.93369
 The threshold is then set as:
 <img src="/tex/b4be166e241537544877760716059bd8.svg?invert_in_darkmode&sanitize=true" align=middle width=142.72244744999998pt height=22.831056599999986pt/>
 
-Now run the detection:
+- Now run the detection:
 ```
 python eval.py \
        --mode=test \
